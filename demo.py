@@ -21,7 +21,7 @@ screen.fill(background_colour)
 
 #
 class Limb:
-    def __init__(self, bone_no=3):
+    def __init__(self, bone_no=2):
         self.start_pos = [width / 2, height / 2]
         self.end_pos = []
         self.bone_no = bone_no
