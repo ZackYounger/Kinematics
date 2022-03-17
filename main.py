@@ -21,11 +21,11 @@ screen.fill(background_colour)
 
 #
 class Limb:
-    def __init__(self, bone_no=10):
+    def __init__(self, bone_no=3):
         self.start_pos = [width / 2, height / 2]
         self.end_pos = []
         self.bone_no = bone_no
-        self.bone_length = 25
+        self.bone_length = 100
         self.bones = [MainJoint(None, [width / 2, height / 2], True)]
 
         for bone in range(self.bone_no):
@@ -40,6 +40,7 @@ class Limb:
         for bone in self.bones:
             bone.update()
         self.backward_adjust()
+        self.forward_adjust()
 
 
     def draw(self):
@@ -51,18 +52,25 @@ class Limb:
         for index, value in enumerate(self.bones[1:-1]):
             index = index + 1
             self.bones[index].end_pos = self.bones[index - 1].start_pos
-            side_ratio = [self.bones[index].start_pos[0] - self.bones[index].end_pos[0],
-                          self.bones[index].start_pos[1] - self.bones[index].end_pos[1]]    # [dx to dy]
-            gradient = side_ratio[1] / side_ratio[0]
-            angle = atan(gradient)
-            self.bones[index].start_pos = [self.bones[index].length * cos(angle) + self.bones[index].end_pos[0],
-                                           self.bones[index].length * sin(angle) + self.bones[index].end_pos[1]]
+            distance = sqrt((self.bones[index].start_pos[0] - self.bones[index].end_pos[0])**2 + (self.bones[index].start_pos[1] - self.bones[index].end_pos[1])**2)
+            n_vector = [(self.bones[index].start_pos[0] - self.bones[index].end_pos[0]) / distance,
+                        (self.bones[index].start_pos[1] - self.bones[index].end_pos[1]) / distance]    # [dx to dy]
+            self.bones[index].start_pos = [self.bones[index].length * n_vector[0] + self.bones[index].end_pos[0],
+                                           self.bones[index].length * n_vector[1] + self.bones[index].end_pos[1]]
 
             #time.sleep(1)
         self.bones = self.bones[::-1]
 
     def forward_adjust(self):
-        pass
+        for index, value in enumerate(self.bones[1:-1]):
+            index = index + 1
+            self.bones[index].start_pos = self.bones[index - 1].end_pos
+            distance = sqrt((self.bones[index].end_pos[0] - self.bones[index].start_pos[0]) ** 2 + (
+                        self.bones[index].end_pos[1] - self.bones[index].start_pos[1]) ** 2)
+            n_vector = [(self.bones[index].end_pos[0] - self.bones[index].start_pos[0]) / distance,
+                        (self.bones[index].end_pos[1] - self.bones[index].start_pos[1]) / distance]  # [dx to dy]
+            self.bones[index].end_pos = [self.bones[index].length * n_vector[0] + self.bones[index].start_pos[0],
+                                           self.bones[index].length * n_vector[1] + self.bones[index].start_pos[1]]
 
 
 class MainJoint():
@@ -76,7 +84,7 @@ class MainJoint():
             self.start_pos = mouse_pos
 
     def draw(self):
-        pygame.draw.circle(screen, white, self.end_pos if self.fixed else self.start_pos, 5)
+        pygame.draw.circle(screen, white, (round(self.end_pos[0]), round(self.end_pos[1])) if self.fixed else (round(self.start_pos[0]), round(self.start_pos[1])), 5)
 
 
 class Bone:
@@ -97,9 +105,6 @@ class Bone:
 mouse_pos = pygame.mouse.get_pos()
 l = Limb()
 
-#x = [1,2,3,4,5,6,7,8]
-#for i in x[1:-1]:
-#    print(i)
 
 running = True
 while running:
@@ -107,10 +112,12 @@ while running:
     screen.fill(background_colour)
     mouse_pos = pygame.mouse.get_pos()
 
-    if sqrt((width/2 - mouse_pos[0])**2 + (height/2 - mouse_pos[1])**2) > l.bone_no * l.bone_length:
-        angle = atan((height/2 - mouse_pos[1]) / (width/2 - mouse_pos[0]))
-        mouse_pos = [l.bone_no * l.bone_length * cos(angle) + height/2,
-                     l.bone_no * l.bone_length * sin(angle) + width/2]
+    distance = sqrt((width/2 - mouse_pos[0])**2 + (height/2 - mouse_pos[1])**2)
+    if distance > l.bone_no * l.bone_length:
+        n_vector = [(mouse_pos[0] - height/2) / distance,
+                    (mouse_pos[1] - height/2) / distance]
+        mouse_pos = [l.bone_no * l.bone_length * n_vector[0] + height/2,
+                     l.bone_no * l.bone_length * n_vector[1] + width/2]
 
     keys = pygame.key.get_pressed()
     for event in pygame.event.get():
@@ -124,7 +131,7 @@ while running:
     l.update()
     l.draw()
 
-    pygame.draw.circle(screen, white, mouse_pos, 10, 3)
+    pygame.draw.circle(screen, white, (round(mouse_pos[0]), round(mouse_pos[1])), 10, 3)
 
     pygame.display.flip()
 pygame.quit()
