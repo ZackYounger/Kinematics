@@ -21,17 +21,17 @@ screen.fill(background_colour)
 
 ground_level = height - 50
 
-g = 2
+g = 8
 
 tick = 0
 
 
 class Limb:
-    def __init__(self, bone_no=3, start_pos=[width / 2, height / 2]):
+    def __init__(self, bone_no=15, start_pos=[width / 2, height / 2]):
         self.start_pos = start_pos
         self.end_pos = []
         self.bone_no = bone_no
-        self.bone_length = 30
+        self.bone_length = 5
         self.bones = [MainJoint(None, [width / 2, height / 2], True)]
         self.t = 1
 
@@ -44,15 +44,15 @@ class Limb:
         self.saved_end_point = [start_pos[0], ground_level]
 
     def update(self, start_pos):
-        temp_value = self.saved_end_point[0] - body.pos[0]
+        temp_value = self.saved_end_point[0] - self.bones[0].end_pos[0]
 
-        if abs(temp_value) > body.step_size and self.t >= 1:
+        if abs(temp_value) > body.step_size * 1.5 and self.t >= 1:
             self.t = 0
 
         if self.t == 0:
             self.p0 = [self.saved_end_point[0], ground_level]
             self.p1 = [body.pos[0], ground_level - body.step_height]
-            self.p2 = [body.pos[0] - body.step_size * (temp_value / abs(temp_value)) * 1.5, ground_level]
+            self.p2 = [body.pos[0] - body.step_size * (temp_value / abs(temp_value)) * 1.2, ground_level]
 
         if self.t < 1:
             self.t += 0.1
@@ -141,16 +141,16 @@ class Bone:
 
 
 class Body:
-    def __init__(self, no_legs=2, pos=[width / 2, 600]):
-        self.width = 30
-        self.height = 60
+    def __init__(self, no_legs=7, pos=[width / 2, 600]):
+        self.width = 150
+        self.height = 30
         self.no_legs = no_legs
         self.pos = pos
         self.vel = [0, 0]
         self.force = [0, 0]
         self.acc = [0, 0]
         self.drag = 0.98
-        self.legs = [Limb(3, [self.pos[0] - self.width / 2 + self.width / (self.no_legs - 1) * leg, self.pos[1] + self.height / 2])
+        self.legs = [Limb(15, [self.pos[0] - self.width / 2 + self.width / (self.no_legs - 1) * leg, self.pos[1] + self.height / 2])
                      for leg in range(self.no_legs)]
         self.mass = 10
         self.step_size = 35
@@ -161,9 +161,9 @@ class Body:
         self.horizontal_force = 0
         for leg in self.legs:
             if ground.collidepoint(leg.bones[-2].end_pos):
-                self.reaction_force += (ground_level - (self.legs[0].bone_length * self.legs[0].bone_no))**1.5 * 0.0002
+                self.reaction_force += (ground_level - (self.legs[0].bone_length * self.legs[0].bone_no))**1.5 * 0.00015
 
-            self.horizontal_force += ((leg.bones[-2].end_pos[0] - self.pos[0]))
+            self.horizontal_force += ((leg.bones[-2].end_pos[0] - self.pos[0])/self.no_legs)
 
         self.force = [self.horizontal_force, g - self.reaction_force]
 
